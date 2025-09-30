@@ -10,7 +10,7 @@ It aims to be **modular, reproducible, and easy to extend** for different credit
 
 ---
 
-## ✨ Features
+## Features
 
 - **Probability distribution learning** with RBMs  
 - **Monte Carlo engine** for scenario simulation and tail-risk estimation  
@@ -20,11 +20,6 @@ It aims to be **modular, reproducible, and easy to extend** for different credit
 
 ---
 
-## 🚀 Getting Started
-
 ### Prerequisites
 - Python 3.9+
 - `numpy`, `pandas`, `scikit-learn`, `matplotlib`, `seaborn`, `torch` (for RBM implementation)
-
-```bash
-pip install -r requirements.txt
