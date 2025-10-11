@@ -1,12 +1,14 @@
 # Risk Modeling Framework
 
-A **Python-based framework for risk modeling** that integrates  
+Hello! here I developed A **Python-based framework for risk modeling** that integrates  
 - **Machine Learning algorithms** – in particular **Restricted Boltzmann Machines (RBMs)** for learning probability distributions of borrower and market data  
 - **Monte Carlo simulations** for scenario testing and stress analysis  
 - **Classical statistical methods** for uncertainty quantification and loss estimation.
 
-The framework is designed to **model the risk of lending decisions**, estimate default probabilities, and quantify potential portfolio losses under a range of macroeconomic scenarios.  
+The framework is designed to **model the risk of lending decisions**, estimate default probabilities, and quantify potential portfolio losses under a range of macroeconomic scenarios. 
 It aims to be **modular, reproducible, and easy to extend** for different credit risk applications.
+
+This project is inspired by https://arxiv.org/pdf/2202.11060
 
 ---
 
