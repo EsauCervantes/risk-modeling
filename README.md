@@ -14,8 +14,7 @@ This project is inspired by https://arxiv.org/pdf/2202.11060
 
 ## Features
 
-- **Probability distribution learning** with RBMs  
-- **Monte Carlo engine** for scenario simulation and tail-risk estimation  
+- **A supervised implementation** with a two layered NN from scratch and with TensorFlow 
 - **Model evaluation** with standard risk metrics (e.g., Value at Risk, Expected Shortfall)  
 - **Visualization tools** for portfolio risk exposure and scenario comparisons  
 - Clear, documented Jupyter notebooks for experimentation and demonstration
