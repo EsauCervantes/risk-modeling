@@ -23,4 +23,4 @@ This project is inspired by https://arxiv.org/pdf/2202.11060
 
 ### Prerequisites
 - Python 3.9+
-- `numpy`, `pandas`, `scikit-learn`, `matplotlib`, `seaborn`, `torch` (for RBM implementation)
+- `numpy`, `pandas`, `scikit-learn`, `matplotlib`, `TensorFlow`, `torch` (for RBM implementation)
