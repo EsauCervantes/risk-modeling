@@ -15,13 +15,9 @@ This project is inspired by https://arxiv.org/pdf/2202.11060
 
 ## Features
 
-- **A supervised implementation** with a two layered NN from scratch and with TensorFlow 
+- **A supervised implementation** with XGBoost
 - **Model evaluation** with standard risk metrics (e.g., Value at Risk, Expected Shortfall)  
 - **Visualization tools** for portfolio risk exposure and scenario comparisons  
 - Clear, documented Jupyter notebooks for experimentation and demonstration
 
 ---
-
-### Prerequisites
-- Python 3.9+
-- `numpy`, `pandas`, `scikit-learn`, `matplotlib`, `TensorFlow`, `torch` (for RBM implementation)
