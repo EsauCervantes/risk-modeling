@@ -1,4 +1,4 @@
-# src/models/xgboost_model.py
+# src/xgboost_model.py
 
 import numpy as np
 import xgboost as xgb
@@ -18,6 +18,7 @@ class XGBoostPDModel:
         reg_alpha: float = 0.0,
         n_estimators: int = 500,
         random_state: int = 42,
+        device: str = "cuda",
     ):
         self.learning_rate = learning_rate
         self.max_depth = max_depth
@@ -28,6 +29,7 @@ class XGBoostPDModel:
         self.reg_alpha = reg_alpha
         self.n_estimators = n_estimators
         self.random_state = random_state
+        self.device = device
         self.model = None
 
     def _build_model(self, scale_pos_weight: float):
@@ -44,6 +46,7 @@ class XGBoostPDModel:
             n_estimators=self.n_estimators,
             scale_pos_weight=scale_pos_weight,
             tree_method="hist",
+            device=self.device,
             random_state=self.random_state,
         )
 
@@ -60,7 +63,11 @@ class XGBoostPDModel:
         return self
 
     def predict_proba(self, X):
-        return self.model.predict_proba(X)[:, 1]
+        if self.model is None:
+            raise RuntimeError("Model must be fitted before prediction.")
+
+        dmatrix = xgb.DMatrix(X)
+        return self.model.get_booster().predict(dmatrix)
 
     def evaluate(self, X, y):
         y = np.asarray(y).astype(int)
