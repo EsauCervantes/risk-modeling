@@ -1,23 +1,65 @@
-# Risk Modeling Framework
+# Credit Risk Modeling
 
-Hello! here I developed A **Python-based framework for risk modeling** with a dataset taken from the Give Me Some Credit Kaggle competition (https://www.kaggle.com/c/GiveMeSomeCredit). The notebooks have two implementations:
+This project builds a small, reproducible credit risk modeling workflow using the
+Give Me Some Credit dataset. The goal is to estimate borrower probability of
+default and compare an interpretable baseline model against a stronger tabular
+machine learning benchmark.
 
-- **A supervised approach** to estimate the probability of default implemented with a 2-layered neural network.
+The project is intentionally practical rather than research-level. It is meant
+to show a clean modeling process, sensible evaluation metrics, and plots that
+are relevant for credit risk model development.
 
-- **Unsupervised approach** - in particular **Restricted Boltzmann Machines (RBMs)** for learning probability distributions of borrower and market data
+## Models
 
-The framework is designed to **model the risk of lending decisions**, estimate default probabilities, and quantify potential portfolio losses under a range of macroeconomic scenarios.
-It aims to be **modular, reproducible, and easy to extend** for different credit risk applications.
+- **Logistic regression with regularization** as the interpretable benchmark.
+  This model is useful because the fitted coefficients can be inspected and
+  explained in terms of borrower risk drivers.
+- **XGBoost** as the nonlinear benchmark for tabular predictive performance.
+  This model is included to test whether a more flexible algorithm improves
+  default ranking and classification quality.
 
-This project is inspired by https://arxiv.org/pdf/2202.11060
+## Evaluation
 
----
+The planned model comparison focuses on out-of-sample performance and credit
+risk interpretability:
 
-## Features
+- ROC curve and ROC-AUC
+- Precision-recall curve and PR-AUC
+- Predicted probability of default distribution
+- Calibration analysis
+- Default rate by predicted risk decile
 
-- **A supervised implementation** with XGBoost
-- **Model evaluation** with standard risk metrics (e.g., Value at Risk, Expected Shortfall)
-- **Visualization tools** for portfolio risk exposure and scenario comparisons
-- Clear, documented Jupyter notebooks for experimentation and demonstration
+## Project Structure
 
----
+```text
+risk-modeling/
+├── data/                 # local dataset files, ignored by Git
+├── notebooks/            # polished analysis notebooks
+├── reports/              # exported figures and tables
+├── src/
+│   ├── evaluate.py
+│   ├── load_data.py
+│   ├── logistic_model.py
+│   ├── plots.py
+│   └── xgboost_model.py
+└── README.md
+```
+
+The raw Give Me Some Credit files are not committed to the repository. They can
+be downloaded from Kaggle:
+
+https://www.kaggle.com/c/GiveMeSomeCredit
+
+## Current Status
+
+The repository currently contains early supervised modeling notebooks and Python
+modules. The next development step is to clean the XGBoost implementation, add a
+regularized logistic regression baseline, and organize the notebooks around a
+clear model comparison workflow.
+
+## Future Extensions
+
+Possible later extensions include scorecard-style reporting, Tableau dashboard
+exports, stress testing, and portfolio-level risk summaries. Research-oriented
+methods such as Restricted Boltzmann Machines may be revisited later, but they
+are outside the scope of the first practical version.
