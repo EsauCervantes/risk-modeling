@@ -17,6 +17,7 @@ class XGBoostPDModel:
         reg_lambda: float = 1.0,
         reg_alpha: float = 0.0,
         n_estimators: int = 500,
+        scale_pos_weight: float | str | None = None,
         random_state: int = 42,
         device: str = "cuda",
     ):
@@ -28,9 +29,21 @@ class XGBoostPDModel:
         self.reg_lambda = reg_lambda
         self.reg_alpha = reg_alpha
         self.n_estimators = n_estimators
+        self.scale_pos_weight = scale_pos_weight
         self.random_state = random_state
         self.device = device
         self.model = None
+
+    def _resolve_scale_pos_weight(self, y_train) -> float:
+        if self.scale_pos_weight == "auto":
+            n_pos = int((y_train == 1).sum())
+            n_neg = int((y_train == 0).sum())
+            return (n_neg / n_pos) if n_pos > 0 else 1.0
+
+        if self.scale_pos_weight is None:
+            return 1.0
+
+        return float(self.scale_pos_weight)
 
     def _build_model(self, scale_pos_weight: float):
         return xgb.XGBClassifier(
@@ -52,10 +65,7 @@ class XGBoostPDModel:
 
     def fit(self, X_train, y_train):
         y_train = np.asarray(y_train).astype(int)
-
-        n_pos = int((y_train == 1).sum())
-        n_neg = int((y_train == 0).sum())
-        scale_pos_weight = (n_neg / n_pos) if n_pos > 0 else 1.0
+        scale_pos_weight = self._resolve_scale_pos_weight(y_train)
 
         self.model = self._build_model(scale_pos_weight=scale_pos_weight)
         self.model.fit(X_train, y_train)
