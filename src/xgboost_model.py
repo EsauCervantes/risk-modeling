@@ -7,6 +7,12 @@ from sklearn.metrics import roc_auc_score, average_precision_score, log_loss
 
 
 class XGBoostPDModel:
+    """XGBoost probability-of-default model.
+
+    CPU is the default for portability in clean checkouts. CUDA can be enabled
+    manually on compatible machines with ``XGBoostPDModel(device="cuda")``.
+    """
+
     def __init__(
         self,
         learning_rate: float = 0.05,
@@ -19,7 +25,7 @@ class XGBoostPDModel:
         n_estimators: int = 500,
         scale_pos_weight: float | str | None = None,
         random_state: int = 42,
-        device: str = "cuda",
+        device: str = "cpu",
     ):
         self.learning_rate = learning_rate
         self.max_depth = max_depth
@@ -76,8 +82,7 @@ class XGBoostPDModel:
         if self.model is None:
             raise RuntimeError("Model must be fitted before prediction.")
 
-        dmatrix = xgb.DMatrix(X)
-        return self.model.get_booster().predict(dmatrix)
+        return self.model.predict_proba(X)[:, 1]
 
     def evaluate(self, X, y):
         y = np.asarray(y).astype(int)

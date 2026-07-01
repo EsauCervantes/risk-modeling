@@ -42,24 +42,38 @@ risk-modeling/
 │   ├── logistic_model.py
 │   ├── plots.py
 │   └── xgboost_model.py
-└── README.md
+├── README.md
+└── requirements.txt
 ```
 
-The raw Give Me Some Credit files are not committed to the repository. They can
-be downloaded from Kaggle:
+## Reproducibility
+
+The raw Give Me Some Credit files are not committed to this repository. Download
+the competition files from Kaggle and place them under:
+
+```text
+data/GiveMeSomeCredit/
+├── cs-training.csv
+├── cs-test.csv
+└── sampleEntry.csv
+```
+
+The expected source is:
 
 https://www.kaggle.com/c/GiveMeSomeCredit
 
+XGBoost runs on CPU by default so the project works on a clean checkout without
+GPU hardware. If a compatible NVIDIA/CUDA environment is available, GPU training
+can be enabled manually by constructing the model with `device="cuda"`.
+
 ## Current Status
 
-The repository currently contains early supervised modeling notebooks and Python
-modules. The next development step is to clean the XGBoost implementation, add a
-regularized logistic regression baseline, and organize the notebooks around a
-clear model comparison workflow.
+The repository contains an applied, reproducible workflow for data exploration,
+probability-of-default model training, and model comparison. It is intended as a
+portfolio case study, not as a production-ready risk system.
 
 ## Future Extensions
 
 Possible later extensions include scorecard-style reporting, Tableau dashboard
-exports, stress testing, and portfolio-level risk summaries. Research-oriented
-methods such as Restricted Boltzmann Machines may be revisited later, but they
-are outside the scope of the first practical version.
+exports, model monitoring summaries, and a small German/English GenAI reporting
+layer for business-facing model commentary.
