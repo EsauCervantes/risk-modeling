@@ -66,10 +66,10 @@ def plot_roc_curve(
             raise ValueError("ROC curve requires both positive and negative labels.")
         fpr, tpr, _ = roc_curve(y_true_array, y_score_array)
         auc = roc_auc_score(y_true_array, y_score_array)
-        ax.plot(fpr, tpr, linewidth=2, label=f"{model_name} (AUC={auc:.3f})")
+        ax.plot(fpr, tpr, linewidth=2, label=f"{model_name} (ROC-AUC={auc:.3f})")
 
     ax.plot([0, 1], [0, 1], linestyle="--", color="gray", linewidth=1, label="Random")
-    ax.set_title("ROC Curve")
+    ax.set_title("ROC-AUC Curve")
     ax.set_xlabel("False positive rate")
     ax.set_ylabel("True positive rate")
     ax.set_xlim(0, 1)
@@ -94,7 +94,12 @@ def plot_precision_recall_curve(
         y_true_model, y_score_array = _prepare_binary_inputs(y_true, y_score)
         precision, recall, _ = precision_recall_curve(y_true_model, y_score_array)
         pr_auc = average_precision_score(y_true_model, y_score_array)
-        ax.plot(recall, precision, linewidth=2, label=f"{model_name} (AP={pr_auc:.3f})")
+        ax.plot(
+            recall,
+            precision,
+            linewidth=2,
+            label=f"{model_name} (PR-AUC={pr_auc:.3f})",
+        )
 
     ax.axhline(
         default_rate,
@@ -103,7 +108,7 @@ def plot_precision_recall_curve(
         linewidth=1,
         label=f"Default rate ({default_rate:.1%})",
     )
-    ax.set_title("Precision-Recall Curve")
+    ax.set_title("Precision-Recall Curve (PR-AUC)")
     ax.set_xlabel("Recall")
     ax.set_ylabel("Precision")
     ax.set_xlim(0, 1)
@@ -116,12 +121,16 @@ def plot_precision_recall_curve(
 def plot_calibration_curve(
     calibration_tables: Mapping[str, pd.DataFrame],
     ax=None,
+    max_axis: float | None = None,
+    log_scale: bool = False,
 ):
     """Plot mean predicted PD against observed default rate by calibration bin."""
     if not calibration_tables:
         raise ValueError("calibration_tables must contain at least one model.")
 
     fig, ax = _get_fig_ax(ax)
+    axis_values = []
+    plot_data = []
 
     for model_name, table in calibration_tables.items():
         required_columns = {"mean_predicted_pd", "observed_default_rate"}
@@ -132,20 +141,54 @@ def plot_calibration_curve(
                 f"{sorted(missing_columns)}"
             )
 
+        mean_pd = table["mean_predicted_pd"].to_numpy()
+        observed_rate = table["observed_default_rate"].to_numpy()
+        plot_data.append((model_name, mean_pd, observed_rate))
+        axis_values.extend(mean_pd.tolist())
+        axis_values.extend(observed_rate.tolist())
+
+    if max_axis is None:
+        max_axis = min(1.0, max(axis_values) * 1.15)
+        max_axis = max(max_axis, 0.05)
+
+    min_axis = 0.0
+    if log_scale:
+        positive_axis_values = [value for value in axis_values if value > 0]
+        if not positive_axis_values:
+            raise ValueError("Log-scale calibration requires positive bin values.")
+
+        min_axis = max(min(positive_axis_values) / 1.15, 1e-6)
+        ax.set_xscale("log")
+        ax.set_yscale("log")
+        ax.set_title("Calibration Curve (Log Scale)")
+    else:
+        ax.set_title("Calibration Curve")
+
+    for model_name, mean_pd, observed_rate in plot_data:
+        if log_scale:
+            mean_pd = np.clip(mean_pd, min_axis, max_axis)
+            observed_rate = np.clip(observed_rate, min_axis, max_axis)
+
         ax.plot(
-            table["mean_predicted_pd"],
-            table["observed_default_rate"],
+            mean_pd,
+            observed_rate,
             marker="o",
             linewidth=2,
             label=model_name,
         )
 
-    ax.plot([0, 1], [0, 1], linestyle="--", color="gray", linewidth=1, label="Perfect")
-    ax.set_title("Calibration Curve")
+    ax.plot(
+        [min_axis, max_axis],
+        [min_axis, max_axis],
+        linestyle="--",
+        color="gray",
+        linewidth=1,
+        label="Perfect",
+    )
     ax.set_xlabel("Mean predicted PD")
     ax.set_ylabel("Observed default rate")
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
+    ax.set_xlim(min_axis, max_axis)
+    ax.set_ylim(min_axis, max_axis)
     _apply_common_style(ax)
 
     return fig, ax
@@ -154,10 +197,13 @@ def plot_calibration_curve(
 def plot_pd_distribution(
     model_scores: Mapping[str, object],
     ax=None,
+    log_x: bool = False,
+    bins: int = 40,
 ):
     """Plot predicted probability-of-default distributions by model."""
     _validate_model_scores(model_scores)
     fig, ax = _get_fig_ax(ax)
+    prepared_scores = {}
 
     for model_name, y_score in model_scores.items():
         y_score_array = np.asarray(y_score, dtype=float).ravel()
@@ -166,10 +212,28 @@ def plot_pd_distribution(
         if not np.isfinite(y_score_array).all():
             raise ValueError(f"Scores for {model_name} contain NaN or infinite values.")
 
+        prepared_scores[model_name] = np.clip(y_score_array, 0.0, 1.0)
+
+    if log_x:
+        positive_scores = np.concatenate(
+            [scores[scores > 0] for scores in prepared_scores.values()]
+        )
+        if len(positive_scores) == 0:
+            raise ValueError("At least one positive score is required for log scaling.")
+
+        lower = max(positive_scores.min(), 1e-6)
+        upper = max(positive_scores.max(), lower * 10)
+        histogram_bins = np.geomspace(lower, upper, bins + 1)
+    else:
+        histogram_bins = bins
+
+    for model_name, y_score_array in prepared_scores.items():
+        scores = np.clip(y_score_array, lower, upper) if log_x else y_score_array
+
         ax.hist(
-            np.clip(y_score_array, 0.0, 1.0),
-            bins=40,
-            range=(0, 1),
+            scores,
+            bins=histogram_bins,
+            range=None if log_x else (0, 1),
             density=True,
             alpha=0.35,
             label=model_name,
@@ -178,7 +242,11 @@ def plot_pd_distribution(
     ax.set_title("Predicted PD Distribution")
     ax.set_xlabel("Predicted probability of default")
     ax.set_ylabel("Density")
-    ax.set_xlim(0, 1)
+    if log_x:
+        ax.set_xscale("log")
+        ax.set_xlim(lower, upper)
+    else:
+        ax.set_xlim(0, 1)
     _apply_common_style(ax)
 
     return fig, ax
