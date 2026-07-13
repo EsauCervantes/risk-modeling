@@ -1,0 +1,35 @@
+{
+  "data": {
+    "training_path": "data/GiveMeSomeCredit/cs-training.csv"
+  },
+  "split": {
+    "test_size": 0.2,
+    "random_state": 42
+  },
+  "logistic_regression": {
+    "penalty": "l2",
+    "C": 1.0,
+    "clip_quantiles": [0.01, 0.99],
+    "class_weight": null,
+    "max_iter": 5000,
+    "random_state": 42
+  },
+  "xgboost": {
+    "device": "cpu",
+    "n_estimators": 500,
+    "learning_rate": 0.05,
+    "max_depth": 5,
+    "min_child_weight": 1.0,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "reg_lambda": 1.0,
+    "reg_alpha": 0.0,
+    "scale_pos_weight": null,
+    "random_state": 42
+  },
+  "outputs": {
+    "tables_dir": "reports/tables",
+    "figures_dir": "reports/figures",
+    "monitoring_dir": "reports/monitoring"
+  }
+}
