@@ -299,5 +299,13 @@ def save_figure(fig, path: str | Path, dpi: int = 160) -> Path:
     """Save a matplotlib figure, creating parent directories if needed."""
     output_path = Path(path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(output_path, dpi=dpi, bbox_inches="tight")
+    fig.savefig(
+        output_path,
+        dpi=dpi,
+        bbox_inches="tight",
+        pad_inches=0.12,
+        facecolor="white",
+        edgecolor="none",
+        transparent=False,
+    )
     return output_path

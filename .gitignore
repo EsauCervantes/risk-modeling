@@ -8,3 +8,8 @@ __pycache__/
 .~lock*
 
 data/
+
+GenAI_impl/self_supervised_tabular/outputs/*
+!GenAI_impl/self_supervised_tabular/outputs/.gitkeep
+reports/tables/
+*.pt

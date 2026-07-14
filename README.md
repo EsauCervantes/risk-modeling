@@ -1,79 +1,65 @@
-# Credit Risk Modeling
+# Credit Risk Modeling: Supervised ML + Self-Supervised Pretraining
 
-This project builds a small, reproducible credit risk modeling workflow using the
-Give Me Some Credit dataset. The goal is to estimate borrower probability of
-default and compare an interpretable baseline model against a stronger tabular
-machine learning benchmark.
+A probability-of-default case study comparing logistic regression, XGBoost,
+and XGBoost augmented with PyTorch embeddings learned without default labels.
 
-The project is intentionally practical rather than research-level. It is meant
-to show a clean modeling process, sensible evaluation metrics, and plots that
-are relevant for credit risk model development.
+The self-supervised extension applies a pretraining principle used in modern
+GenAI: learn representations from unlabeled data and then evaluate them on a
+downstream task. On this dataset, the augmented model performs close to raw
+XGBoost but does not show a clear overall improvement.
 
-## Models
+![Credit risk model comparison: PR-AUC, calibration and default capture](results/model_comparison_summary.png)
 
-- **Logistic regression with regularization** as the interpretable benchmark.
-  This model is useful because the fitted coefficients can be inspected and
-  explained in terms of borrower risk drivers.
-- **XGBoost** as the nonlinear benchmark for tabular predictive performance.
-  This model is included to test whether a more flexible algorithm improves
-  default ranking and classification quality.
+### What this demonstrates
 
-## Evaluation
+- Supervised ML: logistic regression and XGBoost probability-of-default models.
+- GenAI-adjacent learning: masked-feature self-supervised pretraining with a
+  PyTorch autoencoder.
+- MLOps: configuration-driven checks, training, evaluation and saved artifacts.
 
-The planned model comparison focuses on out-of-sample performance and credit
-risk interpretability:
+### Method
 
-- ROC curve and ROC-AUC
-- Precision-recall curve and PR-AUC
-- Predicted probability of default distribution
-- Calibration analysis
-- Default rate by predicted risk decile
+1. Split and preprocess borrower data without validation leakage.
+2. Train logistic regression and XGBoost on the original features.
+3. Mask borrower features, train the autoencoder to reconstruct them without
+   default labels, and add its eight-dimensional embeddings to XGBoost.
 
-## Project Structure
+The three models are evaluated using PR-AUC, ROC-AUC, calibration/Brier score
+and default capture in the highest-risk groups. PR-AUC is calculated on the
+ordinary linear recall scale.
 
-```text
-risk-modeling/
-├── data/                 # local dataset files, ignored by Git
-├── notebooks/            # polished analysis notebooks
-├── reports/              # exported figures and tables
-├── src/
-│   ├── evaluate.py
-│   ├── load_data.py
-│   ├── logistic_model.py
-│   ├── plots.py
-│   └── xgboost_model.py
-├── README.md
-└── requirements.txt
+### Result
+
+Raw XGBoost gives the best overall balance. XGBoost plus self-supervised
+embeddings performs very similarly. The experiment demonstrates self-supervised
+representation learning and rigorous evaluation, but not a proven performance
+improvement.
+
+<details>
+<summary>Predicted probability distributions</summary>
+
+![Predicted probability distributions for logistic regression, XGBoost and XGBoost with self-supervised embeddings](results/pd_distribution_diagnostic.png)
+
+</details>
+
+### Run
+
+Place the Give Me Some Credit data under `data/GiveMeSomeCredit/`, then run:
+
+```bash
+pip install -r requirements.txt
+
+python mlops/scripts/run_checks.py
+python mlops/scripts/train.py
+python mlops/scripts/evaluate.py
+
+python GenAI_impl/self_supervised_tabular/smoke_test.py
+python GenAI_impl/self_supervised_tabular/run_experiment.py
+python GenAI_impl/self_supervised_tabular/make_interview_figure.py
 ```
 
-## Reproducibility
+### Scope
 
-The raw Give Me Some Credit files are not committed to this repository. Download
-the competition files from Kaggle and place them under:
-
-```text
-data/GiveMeSomeCredit/
-├── cs-training.csv
-├── cs-test.csv
-└── sampleEntry.csv
-```
-
-The expected source is:
-
-https://www.kaggle.com/c/GiveMeSomeCredit
-
-XGBoost runs on CPU by default so the project works on a clean checkout without
-GPU hardware. If a compatible NVIDIA/CUDA environment is available, GPU training
-can be enabled manually by constructing the model with `device="cuda"`.
-
-## Current Status
-
-The repository contains an applied, reproducible workflow for data exploration,
-probability-of-default model training, and model comparison. It is intended as a
-portfolio case study, not as a production-ready risk system.
-
-## Future Extensions
-
-Possible later extensions include scorecard-style reporting, Tableau dashboard
-exports, model monitoring summaries, and a small German/English GenAI reporting
-layer for business-facing model commentary.
+This is a portfolio case study using a public Kaggle dataset. It is not a
+production credit-decision system and does not include external validation,
+fairness testing, regulatory validation or production drift monitoring.
