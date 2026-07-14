@@ -6,7 +6,7 @@ and XGBoost augmented with PyTorch embeddings learned without default labels.
 The self-supervised extension applies a pretraining principle used in modern
 GenAI: learn representations from unlabeled data and then evaluate them on a
 downstream task. On this dataset, the augmented model performs close to raw
-XGBoost but does not show a clear overall improvement.
+XGBoost.
 
 ![Credit risk model comparison: PR-AUC, calibration and default capture](results/model_comparison_summary.png)
 
