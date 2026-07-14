@@ -8,6 +8,10 @@ GenAI: learn representations from unlabeled data and then evaluate them on a
 downstream task. On this dataset, the augmented model performs close to raw
 XGBoost.
 
+The **MLOps** layer provides simple command-line checks, configuration-driven
+training and reproducible evaluation outputs, so the workflow can be rerun
+consistently from a clean checkout.
+
 ![Credit risk model comparison: PR-AUC, calibration and default capture](results/model_comparison_summary.png)
 
 ### What this demonstrates
