@@ -14,14 +14,22 @@ consistently from a clean checkout.
 
 ![Credit risk model comparison: PR-AUC, calibration and default capture](results/model_comparison_summary.png)
 
-![Standardized logistic regression coefficients and odds-ratio interpretation](results/logistic_regression_interpretability.png)
+The summary figure compares the models on precision-recall performance,
+calibration and default capture among the highest-risk validation borrowers.
 
-The logistic model provides a transparent baseline: positive coefficients are
+The logistic model provides a transparent baseline because each standardized
+coefficient has a direct odds-ratio interpretation. Positive coefficients are
 associated with higher default odds and negative coefficients with lower
-default odds, holding the other inputs fixed. Because the inputs are
-standardized, `exp(coefficient)` is the estimated odds multiplier for a
-one-standardized-unit increase; these are conditional associations, not causal
-effects.
+default odds, holding the other inputs fixed; `exp(coefficient)` is the
+estimated odds multiplier for a one-standardized-unit increase.
+
+<p align="center">
+  <img
+    src="results/logistic_regression_interpretability.png"
+    alt="Standardized logistic regression coefficients and odds-ratio interpretation"
+    width="720"
+  />
+</p>
 
 ### What this demonstrates
 
