@@ -23,6 +23,7 @@ from evaluate import make_calibration_table, make_decile_table, save_table  # no
 from plots import (  # noqa: E402
     plot_calibration_curve,
     plot_decile_default_rate,
+    plot_logistic_coefficients,
     plot_pd_distribution,
     plot_precision_recall_curve,
     plot_roc_curve,
@@ -68,7 +69,9 @@ def main() -> None:
 
     tables_dir = project_path(config["outputs"]["tables_dir"])
     figures_dir = project_path(config["outputs"]["figures_dir"])
+    results_dir = PROJECT_ROOT / "results"
     predictions_path = tables_dir / "validation_predictions.csv"
+    coefficients_path = tables_dir / "logistic_coefficients.csv"
 
     if not predictions_path.exists():
         raise FileNotFoundError(
@@ -76,8 +79,16 @@ def main() -> None:
             "`python mlops/scripts/train.py --config mlops/configs/model_config.json` "
             "first."
         )
+    if not coefficients_path.exists():
+        raise FileNotFoundError(
+            "Logistic coefficients are missing. Run "
+            "`python mlops/scripts/train.py --config mlops/configs/model_config.json` "
+            "first; it writes reports/tables/logistic_coefficients.csv from the "
+            "fitted logistic pipeline."
+        )
 
     predictions = pd.read_csv(predictions_path)
+    logistic_coefficients = pd.read_csv(coefficients_path)
     missing_columns = {"y_true", *MODEL_SCORE_COLUMNS.values()} - set(predictions.columns)
     if missing_columns:
         raise ValueError(
@@ -130,6 +141,15 @@ def main() -> None:
 
     fig, _ = plot_pd_distribution(model_scores, log_x=True)
     saved_paths.append(save_figure(fig, figures_dir / "pd_distribution_log_scale.png"))
+
+    fig, _ = plot_logistic_coefficients(logistic_coefficients, top_n=12)
+    saved_paths.append(
+        save_figure(
+            fig,
+            results_dir / "logistic_regression_interpretability.png",
+            dpi=180,
+        )
+    )
 
     for model_name, table in decile_tables.items():
         fig, _ = plot_decile_default_rate(table, model_name=model_name)

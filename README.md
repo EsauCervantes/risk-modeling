@@ -14,6 +14,15 @@ consistently from a clean checkout.
 
 ![Credit risk model comparison: PR-AUC, calibration and default capture](results/model_comparison_summary.png)
 
+![Standardized logistic regression coefficients and odds-ratio interpretation](results/logistic_regression_interpretability.png)
+
+The logistic model provides a transparent baseline: positive coefficients are
+associated with higher default odds and negative coefficients with lower
+default odds, holding the other inputs fixed. Because the inputs are
+standardized, `exp(coefficient)` is the estimated odds multiplier for a
+one-standardized-unit increase; these are conditional associations, not causal
+effects.
+
 ### What this demonstrates
 
 - Supervised ML: logistic regression and XGBoost probability-of-default models.

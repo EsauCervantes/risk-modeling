@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Mapping
 
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 import numpy as np
 import pandas as pd
 from sklearn.metrics import (
@@ -12,6 +13,26 @@ from sklearn.metrics import (
     roc_auc_score,
     roc_curve,
 )
+
+
+COEFFICIENT_REQUIRED_COLUMNS = {
+    "feature",
+    "coefficient",
+    "odds_ratio_per_std",
+}
+
+FEATURE_LABELS = {
+    "RevolvingUtilizationOfUnsecuredLines": "Revolving utilization of unsecured lines",
+    "age": "Age",
+    "NumberOfTime30-59DaysPastDueNotWorse": "Number of 30-59 days past due",
+    "DebtRatio": "Debt ratio",
+    "MonthlyIncome": "Monthly income",
+    "NumberOfOpenCreditLinesAndLoans": "Number of open credit lines and loans",
+    "NumberOfTimes90DaysLate": "Number of times 90+ days late",
+    "NumberRealEstateLoansOrLines": "Number of real estate loans or lines",
+    "NumberOfTime60-89DaysPastDueNotWorse": "Number of 60-89 days past due",
+    "NumberOfDependents": "Number of dependents",
+}
 
 
 def _get_fig_ax(ax=None, figsize: tuple[float, float] = (7, 5)):
@@ -49,6 +70,48 @@ def _apply_common_style(ax):
 def _validate_model_scores(model_scores: Mapping[str, object]):
     if not model_scores:
         raise ValueError("model_scores must contain at least one model.")
+
+
+def _format_feature_label(feature: str) -> str:
+    if feature.endswith("_missing"):
+        base_feature = feature.removesuffix("_missing")
+        base_label = FEATURE_LABELS.get(base_feature, base_feature.replace("_", " "))
+        return f"{base_label} missing indicator"
+
+    return FEATURE_LABELS.get(feature, feature.replace("_", " "))
+
+
+def _prepare_logistic_coefficient_plot_data(
+    coefficients: pd.DataFrame,
+    top_n: int = 12,
+) -> pd.DataFrame:
+    """Validate and rank logistic-regression coefficients for plotting."""
+    missing_columns = COEFFICIENT_REQUIRED_COLUMNS - set(coefficients.columns)
+    if missing_columns:
+        raise ValueError(
+            "Coefficient table is missing required columns: "
+            f"{sorted(missing_columns)}"
+        )
+    if top_n < 1:
+        raise ValueError("top_n must be at least 1.")
+    if coefficients.empty:
+        raise ValueError("Coefficient table must not be empty.")
+
+    plot_data = coefficients.loc[:, sorted(COEFFICIENT_REQUIRED_COLUMNS)].copy()
+    plot_data["coefficient"] = pd.to_numeric(plot_data["coefficient"])
+    plot_data["odds_ratio_per_std"] = pd.to_numeric(plot_data["odds_ratio_per_std"])
+
+    numeric_columns = ["coefficient", "odds_ratio_per_std"]
+    if not np.isfinite(plot_data[numeric_columns].to_numpy()).all():
+        raise ValueError("Coefficient table contains NaN or infinite values.")
+
+    plot_data["abs_coefficient"] = plot_data["coefficient"].abs()
+    plot_data = plot_data.sort_values("abs_coefficient", ascending=False).head(top_n)
+    plot_data["feature_label"] = plot_data["feature"].map(_format_feature_label)
+
+    return plot_data.sort_values("abs_coefficient", ascending=True).reset_index(
+        drop=True
+    )
 
 
 def plot_roc_curve(
@@ -291,6 +354,86 @@ def plot_decile_default_rate(
     )
     ax.set_ylim(0, max(table["observed_default_rate"].max() * 1.2, 0.01))
     ax.grid(True, axis="y", alpha=0.3)
+
+    return fig, ax
+
+
+def plot_logistic_coefficients(
+    coefficients: pd.DataFrame,
+    top_n: int = 12,
+    ax=None,
+):
+    """Plot standardized logistic-regression coefficients and odds multipliers."""
+    plot_data = _prepare_logistic_coefficient_plot_data(coefficients, top_n=top_n)
+    fig, ax = _get_fig_ax(ax, figsize=(9, max(6, 0.48 * len(plot_data) + 2.8)))
+
+    colors = np.where(plot_data["coefficient"] >= 0, "#C44E52", "#4C78A8")
+    y_positions = np.arange(len(plot_data))
+    max_abs_coefficient = float(plot_data["abs_coefficient"].max())
+    x_padding = max(max_abs_coefficient * 0.45, 0.08)
+
+    ax.barh(y_positions, plot_data["coefficient"], color=colors, alpha=0.9)
+    ax.axvline(0, color="#333333", linewidth=1.2)
+
+    for y_position, row in zip(y_positions, plot_data.itertuples(index=False)):
+        coefficient = float(row.coefficient)
+        odds_ratio = float(row.odds_ratio_per_std)
+        offset = max(max_abs_coefficient * 0.035, 0.01)
+        if coefficient >= 0:
+            x_position = coefficient + offset
+            ha = "left"
+        else:
+            x_position = coefficient - offset
+            ha = "right"
+
+        ax.text(
+            x_position,
+            y_position,
+            f"x{odds_ratio:.2f}",
+            va="center",
+            ha=ha,
+            fontsize=9,
+            color="#333333",
+        )
+
+    ax.set_yticks(y_positions)
+    ax.set_yticklabels(plot_data["feature_label"])
+    ax.set_xlabel("Standardized coefficient (log-odds scale)")
+    ax.set_title(
+        "Standardized logistic regression coefficients\n"
+        "Target: serious delinquency/default within two years"
+    )
+    ax.set_xlim(-max_abs_coefficient - x_padding, max_abs_coefficient + x_padding)
+    ax.grid(True, axis="x", alpha=0.3)
+    ax.legend(
+        handles=[
+            Patch(color="#C44E52", label="Higher default odds"),
+            Patch(color="#4C78A8", label="Lower default odds"),
+        ],
+        frameon=False,
+        loc="lower right",
+    )
+
+    note = (
+        "Odds multiplier = exp(coefficient) per one-standardized-unit increase.\n"
+        "Coefficients are conditional associations holding other included "
+        "features fixed, not causal effects.\n"
+        "Continuous inputs were median-imputed, clipped and standardized; "
+        "missing-value indicators are binary,\n"
+        "so their standardized coefficients require slightly different "
+        "interpretation."
+    )
+    ax.text(
+        0,
+        -0.18,
+        note,
+        transform=ax.transAxes,
+        ha="left",
+        va="top",
+        fontsize=8,
+        color="#444444",
+    )
+    fig.subplots_adjust(left=0.38, right=0.98, bottom=0.24, top=0.86)
 
     return fig, ax
 
